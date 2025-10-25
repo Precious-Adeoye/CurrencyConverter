@@ -20,15 +20,12 @@ namespace CurrencyConverter
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
 
-            // Configuration - Support both appsettings and environment variables
+            // Configuration
             builder.Services.Configure<ExternalApiConfig>(
                 builder.Configuration.GetSection("ExternalApis"));
 
-            // MySQL Database with environment variable support
-            var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
-                                ?? Environment.GetEnvironmentVariable("MYSQLCONNECTIONSTRING")
-                                ?? "Server=localhost;Database=currency_converter;Uid=root;Pwd=;";
-
+            // MySQL Database with Railway support
+            var connectionString = GetConnectionString(builder.Configuration);
             builder.Services.AddDbContext<AppDbContext>(options =>
                 options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString)));
 
@@ -41,7 +38,7 @@ namespace CurrencyConverter
             builder.Services.AddScoped<IRefreshService, RefreshService>();
             builder.Services.AddScoped<IImageService, ImageService>();
 
-            // CORS for production
+            // CORS
             builder.Services.AddCors(options =>
             {
                 options.AddPolicy("AllowAll", policy =>
@@ -76,9 +73,59 @@ namespace CurrencyConverter
             // Initialize database
             await InitializeDatabaseAsync(app);
 
-            // Get port from environment variable (for Railway)
             var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
             app.Run($"http://0.0.0.0:{port}");
+        }
+
+        private static string GetConnectionString(ConfigurationManager configuration)
+        {
+            // Try different environment variable names
+            var railwayUrl = Environment.GetEnvironmentVariable("MYSQLCONNECTIONSTRING")
+                          ?? Environment.GetEnvironmentVariable("DATABASE_URL")
+                          ?? Environment.GetEnvironmentVariable("MYSQL_URL");
+
+            if (!string.IsNullOrEmpty(railwayUrl))
+            {
+                // Convert Railway format to standard MySQL format
+                return ConvertRailwayConnectionString(railwayUrl);
+            }
+
+            // Fallback to appsettings
+            return configuration.GetConnectionString("DefaultConnection")
+                ?? "Server=localhost;Database=currency_converter;Uid=root;Pwd=;";
+        }
+
+        private static string ConvertRailwayConnectionString(string railwayUrl)
+        {
+            // Remove mysql:// prefix if present
+            if (railwayUrl.StartsWith("mysql://root:alzmuWvxyNKRnudpPoiMbFMvoJioIHhH@mysql.railway.internal:3306/railway"))
+            {
+                railwayUrl = railwayUrl.Substring(8);
+            }
+
+            // Parse the connection string
+            var parts = railwayUrl.Split('@');
+            if (parts.Length != 2)
+            {
+                throw new ArgumentException("Invalid Railway connection string format");
+            }
+
+            var userPass = parts[0].Split(':');
+            var hostDb = parts[1].Split('/');
+            var hostPort = hostDb[0].Split(':');
+
+            if (userPass.Length != 2 || hostDb.Length != 2 || hostPort.Length != 2)
+            {
+                throw new ArgumentException("Invalid Railway connection string format");
+            }
+
+            var user = userPass[0];
+            var password = userPass[1];
+            var host = hostPort[0];
+            var port = hostPort[1];
+            var database = hostDb[1];
+
+            return $"Server={host};Database={database};Uid={user};Pwd={password};Port={port};";
         }
 
         private static async Task InitializeDatabaseAsync(WebApplication webApp)
@@ -101,7 +148,6 @@ namespace CurrencyConverter
 
                 if (webApp.Environment.IsProduction())
                 {
-                    // In production, we can continue without throwing
                     logger.LogWarning("Continuing without database initialization");
                 }
             }

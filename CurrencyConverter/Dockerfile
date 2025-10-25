@@ -23,8 +23,21 @@ FROM build AS publish
 ARG BUILD_CONFIGURATION=Release
 RUN dotnet publish "./CurrencyConverter.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
 
+# Runtime image
+FROM mcr.microsoft.com/dotnet/aspnet:8.0
+WORKDIR /app
+COPY --from=build /app/publish .
+
+# Install System.Drawing dependencies
+RUN apt-get update && \
+    apt-get install -y libgdiplus && \
+    apt-get clean
+
 # This stage is used in production or when running from VS in regular mode (Default when not using the Debug configuration)
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
+
+EXPOSE 8080
+ENV ASPNETCORE_URLS=http://*:8080
 ENTRYPOINT ["dotnet", "CurrencyConverter.dll"]
