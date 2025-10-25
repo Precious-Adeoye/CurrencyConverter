@@ -1,8 +1,8 @@
-﻿using System.Drawing;
-using System.Drawing.Imaging;
-using CurrencyConverter.Data;
+﻿using CurrencyConverter.Data;
 using CurrencyConverter.IConverterService;
 using Microsoft.EntityFrameworkCore;
+using System.Drawing;
+using System.Drawing.Imaging;
 
 namespace CurrencyConverter.ConverterService
 {
@@ -77,7 +77,6 @@ namespace CurrencyConverter.ConverterService
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error generating summary image");
-                // Don't throw, as image generation shouldn't break the refresh process
             }
         }
 

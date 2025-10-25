@@ -1,0 +1,13 @@
+[phases.setup]
+cmds = [
+  "dotnet --version",
+  "dotnet restore"
+]
+
+[phases.build]
+cmds = [
+  "dotnet publish -c Release -o output"
+]
+
+[start]
+cmd = "dotnet CurrencyConverter.dll --urls http://0.0.0.0:$PORT"

@@ -15,30 +15,25 @@ namespace CurrencyConverter
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            // Add services to the container.
+            // Add services to the container
             builder.Services.AddControllers();
-            // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
-            builder.Services.AddSwaggerGen(c =>
-            {
-                c.SwaggerDoc("v1", new() { Title = "Country Currency API", Version = "v1" });
-            });
+            builder.Services.AddSwaggerGen();
 
-            // Configuration
+            // Configuration - Support both appsettings and environment variables
             builder.Services.Configure<ExternalApiConfig>(
                 builder.Configuration.GetSection("ExternalApis"));
 
-            // MySQL Database
-            var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+            // MySQL Database with environment variable support
+            var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
+                                ?? Environment.GetEnvironmentVariable("MYSQLCONNECTIONSTRING")
+                                ?? "Server=localhost;Database=currency_converter;Uid=root;Pwd=;";
+
             builder.Services.AddDbContext<AppDbContext>(options =>
                 options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString)));
 
-            // HTTP Client with retry policies
-            builder.Services.AddHttpClient<IExternalApiService, ExternalApiService>(client =>
-            {
-                client.DefaultRequestHeaders.Add("User-Agent", "CountryCurrencyApi/1.0");
-                client.Timeout = TimeSpan.FromSeconds(30);
-            });
+            // HTTP Client
+            builder.Services.AddHttpClient<IExternalApiService, ExternalApiService>();
 
             // Services
             builder.Services.AddScoped<ICountryService, CountryService>();
@@ -46,7 +41,7 @@ namespace CurrencyConverter
             builder.Services.AddScoped<IRefreshService, RefreshService>();
             builder.Services.AddScoped<IImageService, ImageService>();
 
-            // CORS
+            // CORS for production
             builder.Services.AddCors(options =>
             {
                 options.AddPolicy("AllowAll", policy =>
@@ -57,40 +52,22 @@ namespace CurrencyConverter
                 });
             });
 
-            // Memory Cache
-            builder.Services.AddMemoryCache();
-
-            // Health Checks - CHOOSE ONE OPTION BELOW:
-
-            // OPTION 1: Use only your custom DatabaseHealthCheck (Recommended)
+            // Health Checks
             builder.Services.AddHealthChecks()
                 .AddCheck<DatabaseHealthCheck>("database");
 
-            // OPTION 2: If you want to use AddMySql, install the required package first
-            // builder.Services.AddHealthChecks()
-            //     .AddMySql(connectionString);
-
-            // OPTION 3: Basic health check (no database check)
-            // builder.Services.AddHealthChecks();
-
             var app = builder.Build();
 
-            // Configure the HTTP request pipeline.
+            // Configure the HTTP request pipeline
             if (app.Environment.IsDevelopment())
             {
                 app.UseSwagger();
-                app.UseSwaggerUI(c =>
-                {
-                    c.SwaggerEndpoint("/swagger/v1/swagger.json", "Country Currency API v1");
-                    c.RoutePrefix = "swagger";
-                });
+                app.UseSwaggerUI();
             }
 
             app.UseMiddleware<ExceptionHandlingMiddleware>();
-
             app.UseCors("AllowAll");
             app.UseStaticFiles();
-
             app.UseAuthorization();
 
             app.MapControllers();
@@ -99,31 +76,33 @@ namespace CurrencyConverter
             // Initialize database
             await InitializeDatabaseAsync(app);
 
-            app.Run();
+            // Get port from environment variable (for Railway)
+            var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
+            app.Run($"http://0.0.0.0:{port}");
         }
 
         private static async Task InitializeDatabaseAsync(WebApplication webApp)
         {
             using var scope = webApp.Services.CreateScope();
-            var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var services = scope.ServiceProvider;
 
             try
             {
-                // Apply pending migrations
+                var context = services.GetRequiredService<AppDbContext>();
                 await context.Database.MigrateAsync();
 
-                var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
-                logger.LogInformation("MySQL database initialized successfully");
+                var logger = services.GetRequiredService<ILogger<Program>>();
+                logger.LogInformation("Database initialized successfully");
             }
             catch (Exception ex)
             {
-                var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
-                logger.LogError(ex, "An error occurred while initializing the database");
+                var logger = services.GetRequiredService<ILogger<Program>>();
+                logger.LogError(ex, "Database initialization failed");
 
-                // For production, you might want to exit here
                 if (webApp.Environment.IsProduction())
                 {
-                    throw;
+                    // In production, we can continue without throwing
+                    logger.LogWarning("Continuing without database initialization");
                 }
             }
         }

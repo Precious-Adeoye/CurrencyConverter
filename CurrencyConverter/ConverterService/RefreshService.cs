@@ -1,6 +1,4 @@
-﻿using System;
-using System.Diagnostics.Metrics;
-using CurrencyConverter.Data;
+﻿using CurrencyConverter.Data;
 using CurrencyConverter.IConverterService;
 using CurrencyConverter.Model;
 using CurrencyConverter.Utilities;
@@ -8,27 +6,17 @@ using Microsoft.EntityFrameworkCore;
 
 namespace CurrencyConverter.ConverterService
 {
-    public class RefreshResult
-    {
-        public bool Success { get; set; }
-        public int CountriesProcessed { get; set; }
-        public int CountriesUpdated { get; set; }
-        public int CountriesCreated { get; set; }
-        public string? ErrorMessage { get; set; }
-        public List<string> Warnings { get; set; } = new();
-    }
-
     public class RefreshService : IRefreshService
     {
         private readonly AppDbContext _context;
         private readonly IExternalApiService _externalApiService;
-        private readonly ImageService _imageService;
+        private readonly IImageService _imageService;
         private readonly ILogger<RefreshService> _logger;
 
         public RefreshService(
             AppDbContext context,
             IExternalApiService externalApiService,
-            ImageService imageService,
+            IImageService imageService,
             ILogger<RefreshService> logger)
         {
             _context = context;
@@ -146,7 +134,7 @@ namespace CurrencyConverter.ConverterService
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
 
-                // Generate summary image in background (don't await to avoid blocking response)
+                // Generate summary image in background
                 _ = Task.Run(async () =>
                 {
                     try

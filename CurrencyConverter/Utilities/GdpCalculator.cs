@@ -9,7 +9,7 @@
             if (exchangeRate == null || exchangeRate == 0)
                 return null;
 
-            var randomMultiplier = _random.Next(1000, 2001); // 1000-2000
+            var randomMultiplier = _random.Next(1000, 2001);
             return (population * randomMultiplier) / exchangeRate.Value;
         }
 

@@ -1,0 +1,10 @@
+[build]
+builder = "NIXPACKS"
+
+[deploy]
+startCommand = "cd CurrencyConverter && dotnet CurrencyConverter.dll --urls http://0.0.0.0:${PORT:-8080}"
+
+[[services]]
+name = "web"
+[[services.ports]]
+port = 8080
