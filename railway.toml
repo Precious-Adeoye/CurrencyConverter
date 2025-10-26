@@ -1,8 +1,11 @@
 [build]
-builder = "NIXPACKS"
+builder = "nixpacks"
+
+[build.environment]
+DOTNET_VERSION = "8.0.100"
 
 [deploy]
-startCommand = "cd CurrencyConverter && dotnet CurrencyConverter.dll --urls http://0.0.0.0:${PORT:-8080}"
+startCommand = "dotnet CurrencyConverter.dll --urls http://0.0.0.0:$PORT"
 
 [[services]]
 name = "web"
