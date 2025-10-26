@@ -76,7 +76,7 @@ app.Run($"http://0.0.0.0:{port}");
 static string GetConnectionString()
 {
     // Use your Railway connection string
-    var railwayUrl = Environment.GetEnvironmentVariable("MYSQLCONNECTIONSTRING")
+    var railwayUrl = Environment.GetEnvironmentVariable("MYSQL_URL")
                   ?? "mysql://root:alzmuWvxyNKRnudpPoiMbFMvoJioIHhH@mysql.railway.internal:3306/railway";
 
     return ConvertRailwayConnectionString(railwayUrl);

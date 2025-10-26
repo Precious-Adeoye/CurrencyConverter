@@ -5,7 +5,7 @@ builder = "nixpacks"
 DOTNET_VERSION = "8.0.100"
 
 [deploy]
-startCommand = "dotnet CurrencyConverter.dll --urls http://0.0.0.0:$PORT"
+startCommand = "dotnet CurrencyConverter.dll --urls=http://0.0.0.0:$PORT"
 
 [[services]]
 name = "web"
