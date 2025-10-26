@@ -1,7 +1,10 @@
-bin/
-obj/
-.vscode/
-.git/
+**/bin/
+**/obj/
+**/.vs/
+**/.vscode/
+**/node_modules/
+.env
+.git
 .gitignore
-Dockerfile
-README.md
+*.user
+*.swp

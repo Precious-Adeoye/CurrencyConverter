@@ -1,14 +1,14 @@
 # =========================
 # STAGE 1: Build the project
 # =========================
-FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:8.0.8 AS build
 WORKDIR /src
 
-# Copy only the .csproj first for caching
+# Copy only the .csproj file first for layer caching
 COPY ["CurrencyConverter/CurrencyConverter.csproj", "CurrencyConverter/"]
 RUN dotnet restore "CurrencyConverter/CurrencyConverter.csproj"
 
-# Copy everything else
+# Copy the entire source code
 COPY . .
 WORKDIR "/src/CurrencyConverter"
 
@@ -26,17 +26,17 @@ RUN dotnet publish "CurrencyConverter.csproj" -c Release -o /app/publish /p:UseA
 # =========================
 # STAGE 3: Runtime image
 # =========================
-FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS final
+FROM mcr.microsoft.com/dotnet/aspnet:8.0.8 AS final
 WORKDIR /app
 
-# Copy published output
+# Copy published output from the previous stage
 COPY --from=publish /app/publish .
 
-# Expose port for Railway (default: 8080)
-EXPOSE 8080
+# Install optional dependencies for System.Drawing (if used)
+RUN apt-get update && apt-get install -y libgdiplus && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Optional: install dependencies for System.Drawing (used by some libraries)
-RUN apt-get update && apt-get install -y libgdiplus && apt-get clean
+# Expose port for Railway
+EXPOSE 8080
 
 # Environment variables
 ENV ASPNETCORE_URLS=http://+:8080
