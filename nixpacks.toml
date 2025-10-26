@@ -1,13 +1,11 @@
 [phases.setup]
-cmds = [
-  "dotnet --version",
-  "dotnet restore"
-]
+nixPkgs = ["dotnet-sdk_8"]
 
 [phases.build]
 cmds = [
-  "dotnet publish -c Release -o output"
+  "dotnet restore",
+  "dotnet publish -c Release -o out"
 ]
 
 [start]
-cmd = "dotnet CurrencyConverter.dll --urls http://0.0.0.0:$PORT"
+cmd = "dotnet out/YourProject.dll"
