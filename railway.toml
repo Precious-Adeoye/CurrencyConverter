@@ -1,5 +1,6 @@
 [build]
 builder = "nixpacks"
+buildCommand = "DOTNET_VERSION=8.0.100 nixpacks build ."
 
 [build.environment]
 DOTNET_VERSION = "8.0.100"
