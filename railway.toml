@@ -3,7 +3,7 @@ builder = "nixpacks"
 buildCommand = "dotnet publish -c Release -o out"
 
 [build.environment]
-DOTNET_VERSION = "8.0.303"
+DOTNET_VERSION = "8.0"
 
 [deploy]
 startCommand = "dotnet out/CurrencyConverter.dll --urls=http://0.0.0.0:$PORT"
