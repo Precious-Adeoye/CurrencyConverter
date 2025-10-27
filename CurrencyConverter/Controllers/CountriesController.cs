@@ -172,5 +172,45 @@ namespace CurrencyConverter.Controllers
                 return StatusCode(500, new ErrorResponse { Error = "Internal server error" });
             }
         }
+
+        [HttpGet("image-test")]
+        public async Task<IActionResult> GetImageTest()
+        {
+            try
+            {
+                // Generate image on-demand
+                var imageService = HttpContext.RequestServices.GetRequiredService<IImageService>();
+
+                // Use reflection to call the image generation
+                var method = imageService.GetType().GetMethod("GenerateSummaryImageAsync");
+                if (method != null)
+                {
+                    var task = (Task)method.Invoke(imageService, null);
+                    await task;
+                }
+
+                // Try to get the image
+                var imageBytes = await imageService.GetSummaryImageAsync();
+
+                if (imageBytes == null)
+                {
+                    return NotFound(new ErrorResponse
+                    {
+                        Error = "Image generation failed",
+                        Details = "The image service could not generate or save the image"
+                    });
+                }
+
+                return File(imageBytes, "image/png", "summary.png");
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new ErrorResponse
+                {
+                    Error = "Image test failed",
+                    Details = ex.Message
+                });
+            }
+        }
     }
 }
