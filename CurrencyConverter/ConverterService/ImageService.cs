@@ -6,7 +6,7 @@ using System.Drawing.Imaging;
 
 namespace CurrencyConverter.ConverterService
 {
-    public class ImageService : IImageService
+    public class ImageService 
     {
         private readonly AppDbContext _context;
         private readonly IWebHostEnvironment _environment;

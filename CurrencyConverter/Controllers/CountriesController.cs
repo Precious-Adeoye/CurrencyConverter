@@ -147,23 +147,22 @@ namespace CurrencyConverter.Controllers
                 return StatusCode(500, new ErrorResponse { Error = "Internal server error" });
             }
         }
-
         [HttpGet("image")]
         public async Task<IActionResult> GetCountriesImage()
         {
             try
             {
-                _logger.LogInformation("Get countries image called");
-
                 var imageBytes = await _imageService.GetSummaryImageAsync();
 
-                if (imageBytes == null)
+                if (imageBytes == null || imageBytes.Length == 0)
                 {
-                    _logger.LogWarning("Summary image not found");
-                    return NotFound(new ErrorResponse { Error = "Summary image not found" });
+                    return NotFound(new ErrorResponse
+                    {
+                        Error = "Summary image not found",
+                        Details = "Please run /api/countries/refresh first to generate the image"
+                    });
                 }
 
-                _logger.LogInformation("Returning summary image");
                 return File(imageBytes, "image/png", "summary.png");
             }
             catch (Exception ex)

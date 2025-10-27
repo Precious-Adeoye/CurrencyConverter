@@ -2,7 +2,7 @@
 {
     public interface IImageService
     {
-        Task GenerateSummaryImageAsync();
+        Task<string?> GenerateSummaryImageAsync();
         Task<byte[]?> GetSummaryImageAsync();
     }
 }

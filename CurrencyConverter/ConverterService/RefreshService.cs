@@ -24,7 +24,6 @@ namespace CurrencyConverter.ConverterService
             _imageService = imageService;
             _logger = logger;
         }
-
         public async Task<RefreshResult> RefreshCountriesAsync()
         {
             var result = new RefreshResult();
@@ -134,18 +133,27 @@ namespace CurrencyConverter.ConverterService
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
 
-                // Generate summary image in background
-                _ = Task.Run(async () =>
+                // FIXED: Generate summary image synchronously and handle errors properly
+                try
                 {
-                    try
+                    _logger.LogInformation("Starting image generation...");
+                    var imageResult = await _imageService.GenerateSummaryImageAsync();
+
+                    if (imageResult != null)
                     {
-                        await _imageService.GenerateSummaryImageAsync();
+                        _logger.LogInformation("Summary image generated successfully");
                     }
-                    catch (Exception ex)
+                    else
                     {
-                        _logger.LogError(ex, "Error generating summary image");
+                        _logger.LogWarning("Image generation returned null");
+                        result.Warnings.Add("Summary image generation failed");
                     }
-                });
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error generating summary image");
+                    result.Warnings.Add($"Image generation failed: {ex.Message}");
+                }
 
                 result.Success = true;
                 await LogRefreshAsync(true, null, result.CountriesProcessed);
@@ -167,7 +175,6 @@ namespace CurrencyConverter.ConverterService
                 return result;
             }
         }
-
         public async Task<DateTime?> GetLastSuccessfulRefreshAsync()
         {
             return await _context.RefreshLogs
@@ -190,5 +197,7 @@ namespace CurrencyConverter.ConverterService
             await _context.RefreshLogs.AddAsync(log);
             await _context.SaveChangesAsync();
         }
+
+      
     }
 }

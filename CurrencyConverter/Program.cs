@@ -30,7 +30,7 @@ builder.Services.AddHttpClient<IExternalApiService, ExternalApiService>();
 builder.Services.AddScoped<ICountryService, CountryService>();
 builder.Services.AddScoped<IExternalApiService, ExternalApiService>();
 builder.Services.AddScoped<IRefreshService, RefreshService>();
-builder.Services.AddScoped<IImageService, ImageService>();
+builder.Services.AddScoped<IImageService, SkiaImageService>();
 
 // CORS
 builder.Services.AddCors(options =>
