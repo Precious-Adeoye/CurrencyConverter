@@ -1,5 +1,5 @@
 [build]
-builder = "Dockerfile"
+builder = "./Dockerfile"
 
 [deploy]
 startCommand = ""
