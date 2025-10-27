@@ -1,46 +1,25 @@
-# =========================
-# STAGE 1: Build the project
-# =========================
-FROM mcr.microsoft.com/dotnet/sdk:8.0.8 AS build
+# ===== BUILD STAGE =====
+FROM mcr.microsoft.com/dotnet/sdk:8.0.100 AS build
 WORKDIR /src
 
-# Copy only the .csproj file first for layer caching
+# Copy project files and restore
 COPY ["CurrencyConverter/CurrencyConverter.csproj", "CurrencyConverter/"]
 RUN dotnet restore "CurrencyConverter/CurrencyConverter.csproj"
 
-# Copy the entire source code
+# Copy the rest of the source code
 COPY . .
 WORKDIR "/src/CurrencyConverter"
 
-# Build the project in Release mode
-RUN dotnet build "CurrencyConverter.csproj" -c Release -o /app/build
-
-
-# =========================
-# STAGE 2: Publish the project
-# =========================
-FROM build AS publish
+# Publish the app
 RUN dotnet publish "CurrencyConverter.csproj" -c Release -o /app/publish /p:UseAppHost=false
 
-
-# =========================
-# STAGE 3: Runtime image
-# =========================
-FROM mcr.microsoft.com/dotnet/aspnet:8.0.8 AS final
+# ===== RUNTIME STAGE =====
+FROM mcr.microsoft.com/dotnet/aspnet:8.0.10 AS final
 WORKDIR /app
+COPY --from=build /app/publish .
 
-# Copy published output from the previous stage
-COPY --from=publish /app/publish .
-
-# Install optional dependencies for System.Drawing (if used)
-RUN apt-get update && apt-get install -y libgdiplus && apt-get clean && rm -rf /var/lib/apt/lists/*
-
-# Expose port for Railway
+# Railway assigns a PORT environment variable
+ENV ASPNETCORE_URLS=http://+:$PORT
 EXPOSE 8080
 
-# Environment variables
-ENV ASPNETCORE_URLS=http://+:8080
-ENV DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=false
-
-# Start the application
 ENTRYPOINT ["dotnet", "CurrencyConverter.dll"]
