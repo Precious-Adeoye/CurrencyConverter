@@ -1,12 +1,8 @@
 [build]
-builder = "nixpacks"
-buildCommand = "dotnet publish -c Release -o out"
-
-[build.environment]
-DOTNET_VERSION = "8.0.100"
+builder = "dockerfile"
 
 [deploy]
-startCommand = "dotnet out/CurrencyConverter.dll --urls=http://0.0.0.0:$PORT"
+startCommand = ""
 
 [[services]]
 name = "web"
