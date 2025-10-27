@@ -37,5 +37,5 @@ A robust RESTful API built with C# ASP.NET 8.0 that fetches country data and cur
 
 1. **Clone and setup**
    ```bash
-   git clone <your-repo-url>
+   git clone [<Currency Converter Api>](https://github.com/Precious-Adeoye/CurrencyConverter)
    cd CountryCurrencyApi
